@@ -1,34 +1,68 @@
-version: '3' 
-services: 
- 
- 
-  reverse_proxy: 
-    image: jwilder/nginx-proxy 
-    restart: always 
-    ports: 
-      - "8080:8080" 
-      - "8081:8081" 
-    volumes: 
-      - /var/run/docker.sock:/tmp/docker.sock:ro 
-      - ./nginx.conf:/etc/nginx/nginx.conf 
- 
- 
- 
-  apache_WS_1: 
-    depends_on: 
-      - reverse_proxy      
-    image: httpd:alpine  
-    volumes: 
-      - ./HTML:/usr/local/apache2/htdocs
-      #- ./WEB:/etc/nginx/nginx.conf
-    restart: always 
- 
- 
-  apache_WS_2:      
-    image: httpd:2.4 
-    volumes: 
-      - ./HTML2:/usr/local/apache2/htdocs 
-    # environment: 
-    #   VIRTUAL_HOST: "www.google.com/web2" 
-    #   VIRTUAL_PORT: 8000 
+version: '3'
+
+services:
+
+  reverse_proxy:
+    image: jwilder/nginx-proxy
     restart: always
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.20"
+
+  apache_WS_1:
+    depends_on:
+      - reverse_proxy
+    container_name: apache_WS_1
+    image: httpd:alpine
+    volumes:
+      - ./HTML:/usr/local/apache2/htdocs
+    restart: always
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.21"
+
+  apache_WS_2:
+    depends_on:
+      - reverse_proxy
+    container_name: apache_WS_2
+    image: httpd:alpine
+    volumes:
+      - ./HTML2:/usr/local/apache2/htdocs
+    restart: always
+    networks:
+      LAN_VIRTUAL_2:
+        ipv4_address: "10.0.1.21"
+
+  router-nat1:
+    build: .
+    container_name: router1
+    privileged: true
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.3"
+
+  client1:
+    image: alpine
+    restart: always
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: 10.0.0.8
+
+networks:
+  LAN_VIRTUAL_1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+
+  LAN_VIRTUAL_2:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.1.0/24
