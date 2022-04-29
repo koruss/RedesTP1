@@ -14,3 +14,6 @@ volarse todas las imagenes
 
 volarse todas las redes 
 > docker network prune
+
+comandos de alpine 
+https://platformengineer.com/install-vi-bash-curl-on-alpine-linux/
