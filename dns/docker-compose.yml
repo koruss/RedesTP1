@@ -1,0 +1,13 @@
+version: '3'
+services:
+ cliente_1:
+  build:
+    context: ./dns
+    dockerfile: dockerfile
+  container_name: client1
+  privileged: true
+  restart: on-failure
+  command: ["sleep","infinity"]
+
+      
+      
