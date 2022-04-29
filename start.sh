@@ -15,7 +15,7 @@ iptables -t nat -L -n #lista todo el flujo
 #iptables --append INPUT --protocol tcp --dport 443 --jump ACCEPT # permite todo el flujo por el puerto 443
 #iptables --append OUTPUT --protocol tcp --dport 80 --jump ACCEPT
 #iptables --append OUTPUT --protocol udp --jump ACCEPT # salida por udp
-iptables --append INPUT --protocol -p tcp --dport 443 --jump DROP -i eno1 #  no deja entrar ni picha
+iptables --append INPUT --protocol -p tcp --dport 443 --jump DROP -i eth0 #  no deja entrar nada en tcp en la red eno1
 #iptables --append INPUT --protocol tcp --src 10.0.0.0/24 --sport 80 --dst 10.0.0.20 --dport 80 --jump ACCEPT # envia el flujo del puerto 80 al proxy
 #iptables --append INPUT --protocol tcp --src 10.0.0.0/24 --sport 443 --dst 10.0.0.20 --dport 80 --jump ACCEPT # envia el flujo del puerto 443 al proxy
 #iptables --append INPUT --protocol tcp --src 10.0.0.0/24 --sport 3128 --dst 10.0.0.7 --dport 80 --jump ACCEPT # evia del 3128 al web cache
