@@ -37,7 +37,9 @@ services:
         ipv4_address: "10.0.1.21"
 
   router-nat1:
-    build: .
+    build: 
+      context: .
+      dockerfile: router.Dockerfile
     container_name: router1
     privileged: true
     networks:
