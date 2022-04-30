@@ -1,0 +1,160 @@
+version: '3'
+
+services:
+
+# DHCP lan 1 static
+  dhcpd_lan1:
+    build: 
+      context: .
+      dockerfile: dhcp.Dockerfile
+    container_name: dhcpd_lan1
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+    image: isc-dhcp-server
+    # Puerto de comunicación con el DHCP
+    ports:
+      - "67:67/udp"
+    volumes:
+      - ./dhcpd:/data/dhcpd
+    restart: always
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.4"
+
+# DHCP lan 2 static
+  dhcpd_lan2:
+    build: 
+      context: .
+      dockerfile: dhcp.Dockerfile
+    container_name: dhcpd_lan2
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+    image: isc-dhcp-server
+    # Puerto de comunicación con el DHCP
+    ports:
+      - "67:67/udp"
+    volumes:
+      - ./dhcpd2:/data/dhcpd
+    restart: always
+    networks:
+      LAN_VIRTUAL_2:
+        ipv4_address: "10.0.1.5"
+
+
+# Reverse proxy using NGINX
+  reverse_proxy:
+    image: jwilder/nginx-proxy:alpine
+    container_name: reverse_proxy
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.20"
+
+
+# Apaches web server depends on reverse_proxy
+  apache_WS_1:
+    depends_on:
+      - reverse_proxy
+    container_name: apache_WS_1
+    image: httpd:alpine
+    volumes:
+      - ./HTML:/usr/local/apache2/htdocs
+    restart: always
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.21"
+
+  apache_WS_2:
+    depends_on:
+      - reverse_proxy
+    container_name: apache_WS_2
+    image: httpd:alpine
+    volumes:
+      - ./HTML2:/usr/local/apache2/htdocs
+    restart: always
+    networks:
+      LAN_VIRTUAL_2:
+        ipv4_address: "10.0.1.21"
+
+
+# Router-nat inside  LAN 1
+  router-nat1:
+    build: 
+      context: .
+      dockerfile: router.Dockerfile
+    container_name: router1
+    privileged: true
+    networks:
+      LAN_VIRTUAL_1:
+        ipv4_address: "10.0.0.2"
+
+# Router-nat inside  LAN 2
+  router-nat2:
+    build: 
+      context: .
+      dockerfile: router.Dockerfile
+    container_name: router2
+    privileged: true
+    networks:
+      LAN_VIRTUAL_2:
+        ipv4_address: "10.0.1.2"
+
+# Clientes
+# client1 LAN 1 : 10.0.0.100/24
+  client1:
+    depends_on:
+      - dhcpd_lan1
+    container_name: client1
+    image: httpd:alpine
+    restart: always
+    ports:
+      - 8180:8180
+      - "68:68/udp"
+    networks:
+      # problems to assign a dynamic ip
+      LAN_VIRTUAL_1:
+        # static
+        ipv4_address: "10.0.0.100"
+
+# client2 LAN 2 : 10.0.1.200/24
+  client2:
+    depends_on:
+      - dhcpd_lan2
+    container_name: client2
+    image: httpd:alpine
+    restart: always
+    ports:
+      - 8080:80
+      - "68:68/udp"
+    networks:
+      LAN_VIRTUAL_2:
+        ipv4_address: "10.0.1.200"
+
+
+
+# Redes
+# LAN1 : 10.0.0.0/24
+# LAN2 : 10.0.1.0/24
+networks:
+  LAN_VIRTUAL_1:
+    driver: macvlan
+    driver_opts:
+      parent: eth0 
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+
+  LAN_VIRTUAL_2:
+    driver: macvlan
+    ipam:
+      config:
+        - subnet: 10.0.1.0/24
+
+        
