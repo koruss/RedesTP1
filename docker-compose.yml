@@ -3,7 +3,8 @@ version: '2'
 services:
 
   reverse_proxy:
-    image: jwilder/nginx-proxy
+    image: jwilder/nginx-proxy:alpine
+    container_name: reverse_proxy
     restart: always
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
@@ -56,7 +57,7 @@ services:
 
 networks:
   LAN_VIRTUAL_1:
-    driver: macvlan
+    driver: bridge
     driver_opts:
       parent: eno1 
     ipam:
@@ -64,7 +65,7 @@ networks:
         - subnet: 10.0.0.0/24
 
   LAN_VIRTUAL_2:
-    driver: macvlan
+    driver: bridge
     ipam:
       config:
         - subnet: 10.0.1.0/24
